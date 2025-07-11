@@ -1,6 +1,7 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,7 +27,14 @@ export default function RootLayout({
               href="/" 
               className="text-xl font-bold text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
-              DEMANDWORK.AI
+              <Image
+                className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70]"
+                src="/DW.svg"
+                alt="DW Logo"
+                width={60}
+                height={50}
+                priority
+              />
             </Link>
             <div className="space-x-4">
               <Link 

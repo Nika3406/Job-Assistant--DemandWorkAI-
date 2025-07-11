@@ -4,14 +4,13 @@ from psycopg2.extras import RealDictCursor
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = 'super-secret-key'  # In production, use a secure env var
 CORS(app, supports_credentials=True)
 
 # --- Database connection ---
 conn = psycopg2.connect(
-    dbname="your_db",
-    user="your_user",
-    password="your_pass",
+    dbname="demandwork_db",
+    user="root",
+    password="root",
     host="localhost",  # use Docker service name if containerized
     port="5432"
 )
