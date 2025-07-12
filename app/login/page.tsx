@@ -8,22 +8,38 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Use environment variable for API base URL
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    const res = await fetch('http://localhost:3000/api/login', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
+    setIsLoading(true)
 
-    const data = await res.json()
-    if (!res.ok) {
-      setError(data.error || 'Login failed')
-    } else {
-      router.push('/')
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
+
+      // Redirect to dashboard after successful login
+      router.push('/dashboard')
+      router.refresh() // Ensure client-side state updates
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -45,32 +61,58 @@ export default function LoginPage() {
         
         <div className="space-y-4">
           <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email
+            </label>
             <input
+              id="email"
               className="w-full p-3 bg-white/50 dark:bg-black/50 border border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all"
-              placeholder="Email"
+              placeholder="your@email.com"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
           
           <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Password
+            </label>
             <input
+              id="password"
               className="w-full p-3 bg-white/50 dark:bg-black/50 border border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all"
-              placeholder="Password"
+              placeholder="••••••••"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
+              minLength={8}
             />
           </div>
           
           <button 
             type="submit"
-            className="w-full bg-black text-white p-3 rounded-lg hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-colors font-medium"
+            disabled={isLoading}
+            className={`w-full p-3 rounded-lg font-medium transition-colors ${
+              isLoading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+            }`}
           >
-            Log In
+            {isLoading ? 'Logging in...' : 'Log In'}
+          </button>
+        </div>
+        
+        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <button 
+            type="button"
+            onClick={() => router.push('/forgot-password')}
+            className="hover:underline text-gray-600 dark:text-gray-400"
+          >
+            Forgot password?
           </button>
         </div>
         
