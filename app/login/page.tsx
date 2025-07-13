@@ -33,7 +33,7 @@ export default function LoginPage() {
       }
 
       // Redirect to dashboard after successful login
-      router.push('/dashboard')
+      router.push('/account')
       router.refresh() // Ensure client-side state updates
 
     } catch (err) {
