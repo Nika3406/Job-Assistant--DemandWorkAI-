@@ -33,22 +33,22 @@ DB_CONN_PARAMS = {
     "port": DB_CONFIG.port
 }
 
-# Configure CORS
-allowed_origins = [
-    "https://job-assistant-demand-work-ai.vercel.app",
-    "http://localhost:3000"
-]
-
-CORS(app,
-     supports_credentials=True,
-     resources={
-         r"/api/*": {
-             "origins": allowed_origins,
-             "methods": ["GET", "POST", "OPTIONS"],
-             "allow_headers": ["Content-Type"],
-             "expose_headers": ["Content-Type"]
-         }
-     })
+CORS(
+        app,
+        supports_credentials=True,
+        resources={
+            r"/api/*": {
+                "origins": [
+                    "https://job-assistant-demand-work-ai.vercel.app",
+                    "http://localhost:3000"
+                ],
+                "methods": ["GET", "POST", "OPTIONS", "DELETE"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "expose_headers": ["Content-Type"],
+                "max_age": 86400
+            }
+        }
+    )
 
 def get_db():
     """Get a new database connection using Render-style config"""

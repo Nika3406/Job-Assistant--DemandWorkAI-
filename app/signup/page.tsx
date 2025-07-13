@@ -13,14 +13,12 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Use environment variable for API base URL
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://job-assistant-demandworkai.onrender.com"
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
-    // Basic validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return
@@ -37,23 +35,26 @@ export default function SignupPage() {
       const res = await fetch(`${API_BASE_URL}/api/signup`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ 
           email: formData.email, 
           password: formData.password 
         }),
       })
 
-      const data = await res.json()
-      
       if (!res.ok) {
-        throw new Error(data.error || 'Signup failed')
+        const errorText = await res.text()
+        throw new Error(errorText || 'Signup failed')
       }
 
-      // Redirect to login with success state
+      const data = await res.json()
       router.push('/login?signup=success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed. Please try again.')
+      console.error('Signup error:', err)
     } finally {
       setIsLoading(false)
     }

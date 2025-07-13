@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   // Use environment variable for API base URL
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://job-assistant-demandworkai.onrender.com"
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

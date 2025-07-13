@@ -15,7 +15,11 @@ export const metadata: Metadata = {
   }
 }
 
-async function getAuthData() {
+interface AuthData {
+  user?: string
+}
+
+async function getAuthData(): Promise<AuthData | null> {
   const API_BASE_URL = process.env.API_BASE_URL || "https://job-assistant-demandworkai.onrender.com"
   try {
     const cookieStore = cookies()
@@ -24,9 +28,15 @@ async function getAuthData() {
         Cookie: cookieStore.toString()
       },
       credentials: 'include',
-      cache: 'no-store' // Important for auth checks
+      cache: 'no-store'
     })
-    return res.ok ? await res.json() : null
+
+    if (!res.ok) {
+      console.error('Auth check failed with status:', res.status)
+      return null
+    }
+
+    return await res.json()
   } catch (error) {
     console.error('Auth check failed:', error)
     return null
@@ -70,7 +80,7 @@ export default async function RootLayout({
                     Account
                   </Link>
                   <Link 
-                    href="/api/logout" // This will hit your backend directly
+                    href="/api/logout"
                     className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                   >
                     Logout
