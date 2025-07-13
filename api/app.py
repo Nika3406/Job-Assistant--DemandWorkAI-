@@ -26,7 +26,7 @@ urlparse.uses_netloc.append("postgres")
 DB_CONFIG = urlparse.urlparse(DATABASE_URL)
 
 DB_CONN_PARAMS = {
-    "dbname": DB_CONFIG.path,  # remove leading slash
+    "dbname": DB_CONFIG.path[1:],  # remove leading slash
     "user": DB_CONFIG.username,
     "password": DB_CONFIG.password,
     "host": DB_CONFIG.hostname,
