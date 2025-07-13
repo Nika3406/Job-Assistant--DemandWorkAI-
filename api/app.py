@@ -16,18 +16,21 @@ app.secret_key = os.environ.get('SECRET_KEY')
 if not app.secret_key:
     raise RuntimeError("SECRET_KEY environment variable not set!")
 
+# Database configuration (using Render-style URL parsing)
 DATABASE_URL = os.environ.get('DATABASE_URL')
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL not set!")
 
-# Parse Render-style PostgreSQL URL
-url = urlparse(DATABASE_URL)
+if not DATABASE_URL:
+    sys.exit("Error: DATABASE_URL environment variable is not set.")
+
+urlparse.uses_netloc.append("postgres")
+DB_CONFIG = urlparse.urlparse(DATABASE_URL)
+
 DB_CONN_PARAMS = {
-    "host": url.hostname,
-    "database": url.path[1:],  # Remove leading '/'
-    "user": url.username,
-    "password": url.password,
-    "port": url.port
+    "dbname": DB_CONFIG.path,  # remove leading slash
+    "user": DB_CONFIG.username,
+    "password": DB_CONFIG.password,
+    "host": DB_CONFIG.hostname,
+    "port": DB_CONFIG.port
 }
 
 # Configure CORS
