@@ -46,12 +46,11 @@ def create_user(email, password, first_name=None, last_name=None):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Remove the hashing here - just store the password as-is
         cur.execute(
             """INSERT INTO users (email, password, first_name, last_name) 
                VALUES (%s, %s, %s, %s) 
                RETURNING id, email, first_name, last_name""",
-            (email, password, first_name, last_name)  # password is already hashed by routes
+            (email, password, first_name, last_name)
         )
         user = cur.fetchone()
         conn.commit()
@@ -68,5 +67,23 @@ def get_user_by_email(email):
     try:
         cur.execute("SELECT * FROM users WHERE email = %s", (email,))
         return cur.fetchone()
+    finally:
+        conn.close()
+
+def migrate_passwords():
+    """Fix double-hashed passwords (run once)"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cur.execute("SELECT id, password FROM users WHERE password LIKE '$2b$%$2b$%'")
+        for user in cur.fetchall():
+            fixed_hash = user['password'][-60:]  # Extract the inner hash
+            cur.execute("UPDATE users SET password = %s WHERE id = %s", 
+                       (fixed_hash, user['id']))
+        conn.commit()
+        return f"Migrated {cur.rowcount} passwords"
+    except Exception as e:
+        conn.rollback()
+        raise e
     finally:
         conn.close()

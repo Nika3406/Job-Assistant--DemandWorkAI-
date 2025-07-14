@@ -21,41 +21,33 @@ app.register_blueprint(jobs_bp)
 if not app.secret_key:
     raise RuntimeError("SECRET_KEY environment variable not set!")
 
+# Initialize database
+init_db()
+
 # Register blueprints
-app.register_blueprint(profile_bp)
+app.register_blueprint(auth_bp)
 
 # CORS configuration
 CORS(
     app,
     supports_credentials=True,
-    resources={
-        r"/api/*": {
-            "origins": [
-                "https://job-assistant-demand-work-ai.vercel.app",
-                "http://localhost:3000"
-            ],
-            "methods": ["GET", "POST", "PUT", "OPTIONS", "DELETE"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "expose_headers": ["Content-Type"],
-            "max_age": 86400
-        }
-    }
+    origins=[
+        "https://job-assistant-demand-work-ai.vercel.app",
+        "http://localhost:3000"
+    ],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type"],
+    max_age=86400
 )
-
-# Initialize database
-init_db()
-
-# Import routes after app creation to avoid circular imports
-from db_routes import auth_bp  # This would contain your auth routes
-app.register_blueprint(auth_bp)
 
 @app.route('/')
 def health_check():
-    return jsonify({
+    return {
         "status": "healthy",
         "service": "DemandWork.AI Backend",
         "version": "1.0.0"
-    })
+    }
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
