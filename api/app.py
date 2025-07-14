@@ -3,6 +3,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 from db import init_db
+from db_routes import auth_bp
 from profile import profile_bp
 from ai_agents import init_deepseek
 from jobs import jobs_bp
