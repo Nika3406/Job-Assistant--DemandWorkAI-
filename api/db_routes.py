@@ -1,5 +1,6 @@
 from flask import Blueprint, request, session, jsonify
 from db import create_user, get_user_by_email
+import bcrypt
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -18,8 +19,11 @@ def signup():
         if existing_user:
             return jsonify({"error": "User already exists"}), 400
             
+        # Hash password before storing
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
         # Create new user
-        new_user = create_user(email, password)
+        new_user = create_user(email, hashed_password)
         return jsonify({
             "message": "User created successfully",
             "user": {

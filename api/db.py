@@ -2,7 +2,6 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 import urllib.parse as urlparse
-import bcrypt
 
 # Database configuration
 def get_db_config():
@@ -47,14 +46,12 @@ def create_user(email, password, first_name=None, last_name=None):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Hash the password before storing
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        
+        # Remove the hashing here - just store the password as-is
         cur.execute(
             """INSERT INTO users (email, password, first_name, last_name) 
                VALUES (%s, %s, %s, %s) 
                RETURNING id, email, first_name, last_name""",
-            (email, hashed_password, first_name, last_name)
+            (email, password, first_name, last_name)  # password is already hashed by routes
         )
         user = cur.fetchone()
         conn.commit()
