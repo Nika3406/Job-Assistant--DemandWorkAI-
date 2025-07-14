@@ -1,117 +1,122 @@
+// app/login/page.tsx
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://job-assistant-demandworkai.onrender.com"
-
+  // This is where handleLogin goes
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     setError('')
-    
-    if (!email || !password) {
-      setError('Email and password are required')
-      return
-    }
-
-    setIsLoading(true)
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/login`, {
+      const response = await fetch('/api/login', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include' // Required for cookies
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || 'Login failed. Please try again.')
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        throw new Error(`Expected JSON but got: ${text.slice(0, 100)}...`)
       }
 
-      router.push('/account')
-      router.refresh()
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
 
+      // Successful login - redirect to dashboard
+      router.push('/dashboard')
+      router.refresh() // Ensure client-side state updates
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      console.error('Login error:', err)
+      setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-zinc-200 to-transparent dark:from-zinc-900 dark:to-black">
-      <form 
-        onSubmit={handleLogin} 
-        className="relative backdrop-blur-2xl bg-white/30 dark:bg-black/30 p-8 rounded-xl border border-gray-300 dark:border-neutral-800 shadow-lg w-full max-w-md"
-      >
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/50 to-transparent dark:from-black/50 -z-10" />
-        
-        <h1 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">Login</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow">
+        <h2 className="text-2xl font-bold text-center">Sign in to your account</h2>
         
         {error && (
-          <div className="mb-4 p-3 text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300 rounded-lg text-sm">
+          <div className="p-4 text-sm text-red-700 bg-red-100 rounded-lg">
             {error}
           </div>
         )}
-        
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              className="w-full p-3 bg-white/50 dark:bg-black/50 border border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-              placeholder="your@email.com"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
+
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
-          
+
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              className="w-full p-3 bg-white/50 dark:bg-black/50 border border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-              placeholder="••••••••"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              minLength={8}
-            />
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
           </div>
-          
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className={`w-full p-3 rounded-lg font-medium transition-colors ${
-              isLoading 
-                ? 'bg-gray-400 cursor-not-allowed dark:bg-gray-600' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
-            }`}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
+        </form>
+
+        <div className="text-sm text-center">
+          <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
+            Don't have an account? Sign up
+          </Link>
         </div>
-      </form>
-    </main>
+      </div>
+    </div>
   )
 }

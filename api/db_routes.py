@@ -43,28 +43,35 @@ def signup():
 
 @auth_bp.route('/api/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    
     try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+            
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+            
         user = get_user_by_email(email)
         if not user:
             return jsonify({"error": "Invalid credentials"}), 401
             
-        # PROPER PASSWORD VERIFICATION
-        if not bcrypt.checkpw(
-            password.encode('utf-8'), 
-            user['password'].encode('utf-8')
-        ):
+        if not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             return jsonify({"error": "Invalid credentials"}), 401
             
-        session['user_id'] = user['id']
-        return jsonify({"message": "Login successful"})
+        # Set session cookie
+        response = jsonify({
+            "message": "Login successful",
+            "user": {
+                "id": user['id'],
+                "email": user['email']
+            }
+        })
+        response.set_cookie('user_email', user['email'], secure=True, httponly=True)
+        return response
         
-    except ValueError as e:
-        # Specific error for invalid hashes
-        return jsonify({"error": "Authentication system error"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
