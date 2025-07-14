@@ -42,13 +42,18 @@ def init_db():
     finally:
         conn.close()
 
-def create_user(email, password):
+def create_user(email, password, first_name=None, last_name=None):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
+        # Hash the password before storing
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
         cur.execute(
-            "INSERT INTO users (email, password) VALUES (%s, %s) RETURNING id, email",
-            (email, password)
+            """INSERT INTO users (email, password, first_name, last_name) 
+               VALUES (%s, %s, %s, %s) 
+               RETURNING id, email, first_name, last_name""",
+            (email, hashed_password, first_name, last_name)
         )
         user = cur.fetchone()
         conn.commit()
