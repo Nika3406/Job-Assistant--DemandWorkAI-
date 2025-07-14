@@ -40,13 +40,22 @@ export default function DashboardPage() {
     const fetchJobs = async () => {
       try {
         setLoading(true)
+        console.log('Fetching jobs with params:', searchParams) // Debug log
+        
         const response = await fetch(
           `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location)}`
         )
         
-        if (!response.ok) throw new Error('Failed to fetch jobs')
+        console.log('Response status:', response.status) // Debug log
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          console.error('Error response:', errorData) // Debug log
+          throw new Error(errorData.error || 'Failed to fetch jobs')
+        }
         
         const data: Job[] = await response.json()
+        console.log('Jobs data:', data) // Debug log
         setJobs(data)
         if (data.length > 0) {
           setSelectedJob(data[0])
@@ -54,6 +63,9 @@ export default function DashboardPage() {
         }
       } catch (error) {
         console.error('Error fetching jobs:', error)
+        // Show error to user
+        setJobs([])
+        setSelectedJob(null)
       } finally {
         setLoading(false)
       }
