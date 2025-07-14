@@ -40,7 +40,6 @@ CORS(
             r"/api/*": {
                 "origins": [
                     "https://job-assistant-demand-work-ai.vercel.app",
-                    "http://localhost:3000"
                 ],
                 "methods": ["GET", "POST", "OPTIONS", "DELETE"],
                 "allow_headers": ["Content-Type", "Authorization"],
