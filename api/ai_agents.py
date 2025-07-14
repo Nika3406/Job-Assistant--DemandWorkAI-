@@ -2,6 +2,7 @@ import os
 import openai
 from typing import Dict, Any
 from flask import current_app
+import json
 
 def init_deepseek(app):
     """Initialize DeepSeek configuration with the Flask app"""
