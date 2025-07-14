@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 import urllib.parse as urlparse
+import bcrypt
 
 # Database configuration
 def get_db_config():
