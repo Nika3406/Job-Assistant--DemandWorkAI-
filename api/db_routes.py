@@ -14,34 +14,27 @@ def is_valid_password(password):
 @auth_bp.route('/api/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    email = data.get('email', '').strip()
-    password = data.get('password', '').strip()
+    email = data.get('email')
+    password = data.get('password')
     
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
-    
-    if not is_valid_email(email):
-        return jsonify({"error": "Invalid email format"}), 400
-        
-    if not is_valid_password(password):
-        return jsonify({"error": "Password must be at least 8 characters"}), 400
     
     try:
         existing_user = get_user_by_email(email)
         if existing_user:
             return jsonify({"error": "User already exists"}), 400
             
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        # PROPER HASHING (only place it happens)
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        hashed_password = hashed.decode('utf-8')  # Store as string
+        
         new_user = create_user(email, hashed_password)
-        
-        session['user_id'] = new_user['id']
-        session['user_email'] = new_user['email']
-        
         return jsonify({
             "message": "User created successfully",
             "user": {
-                "id": new_user['id'],
-                "email": new_user['email']
+                "email": new_user['email'],
+                "id": new_user['id']
             }
         }), 201
         
@@ -51,31 +44,27 @@ def signup():
 @auth_bp.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
-    email = data.get('email', '').strip()
-    password = data.get('password', '').strip()
-    
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    email = data.get('email')
+    password = data.get('password')
     
     try:
         user = get_user_by_email(email)
         if not user:
             return jsonify({"error": "Invalid credentials"}), 401
             
-        if not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+        # PROPER PASSWORD VERIFICATION
+        if not bcrypt.checkpw(
+            password.encode('utf-8'), 
+            user['password'].encode('utf-8')
+        ):
             return jsonify({"error": "Invalid credentials"}), 401
             
         session['user_id'] = user['id']
-        session['user_email'] = user['email']
+        return jsonify({"message": "Login successful"})
         
-        return jsonify({
-            "message": "Login successful",
-            "user": {
-                "id": user['id'],
-                "email": user['email']
-            }
-        })
-        
+    except ValueError as e:
+        # Specific error for invalid hashes
+        return jsonify({"error": "Authentication system error"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -97,8 +86,6 @@ def get_current_user():
     return jsonify({
         "user": {
             "id": user['id'],
-            "email": user['email'],
-            "first_name": user.get('first_name'),
-            "last_name": user.get('last_name')
+            "email": user['email']
         }
     })

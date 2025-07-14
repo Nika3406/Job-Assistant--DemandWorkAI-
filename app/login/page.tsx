@@ -26,7 +26,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
-        credentials: 'include', // Important for session cookies
+        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -39,22 +39,10 @@ export default function LoginPage() {
         throw new Error(errorData.error || 'Login failed. Please try again.')
       }
 
-      const data = await res.json()
-      
-      // Option 1: Store in localStorage (less secure)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user_email', data.user?.email || email)
-      }
-      
-      // Option 2: Use a client-side context/provider (recommended)
-      // You would typically update your auth context here
-      
-      // Redirect to account page
       router.push('/account')
       router.refresh()
 
     } catch (err) {
-      console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
       setIsLoading(false)
@@ -69,7 +57,7 @@ export default function LoginPage() {
       >
         <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/50 to-transparent dark:from-black/50 -z-10" />
         
-        <h1 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">Welcome Back</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center text-black dark:text-white">Login</h1>
         
         {error && (
           <div className="mb-4 p-3 text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300 rounded-lg text-sm">
@@ -120,38 +108,9 @@ export default function LoginPage() {
                 : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
             }`}
           >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Logging in...
-              </span>
-            ) : 'Log In'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </div>
-        
-        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          <button 
-            type="button"
-            onClick={() => router.push('/forgot-password')}
-            className="hover:underline text-gray-600 dark:text-gray-400"
-          >
-            Forgot password?
-          </button>
-        </div>
-        
-        <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
-          <button 
-            type="button"
-            onClick={() => router.push('/signup')}
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            Sign up
-          </button>
-        </p>
       </form>
     </main>
   )

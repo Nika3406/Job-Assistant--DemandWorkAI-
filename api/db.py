@@ -33,8 +33,6 @@ def init_db():
                 id SERIAL PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                first_name TEXT,
-                last_name TEXT,
                 resume_url TEXT
             )
         """)
@@ -42,15 +40,15 @@ def init_db():
     finally:
         conn.close()
 
-def create_user(email, password, first_name=None, last_name=None):
+def create_user(email, password):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
         cur.execute(
-            """INSERT INTO users (email, password, first_name, last_name) 
-               VALUES (%s, %s, %s, %s) 
-               RETURNING id, email, first_name, last_name""",
-            (email, password, first_name, last_name)
+            """INSERT INTO users (email, password) 
+               VALUES (%s, %s) 
+               RETURNING id, email""",
+            (email, password)
         )
         user = cur.fetchone()
         conn.commit()
