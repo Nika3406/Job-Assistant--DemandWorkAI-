@@ -21,7 +21,7 @@ def get_jobs():
             
         print(f"Making request to Adzuna with: keywords={keywords}, location={location}")  # Debug log
         
-        url = f"http://api.adzuna.com/v1/api/jobs/{country}/search/1"
+        url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1"
         params = {
             'app_id': ADZUNA_APP_ID,
             'app_key': ADZUNA_APP_KEY,
