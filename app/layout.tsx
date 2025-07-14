@@ -20,22 +20,19 @@ interface AuthData {
 }
 
 async function getAuthData(): Promise<AuthData | null> {
+  // Only run on the server
+  if (typeof window !== 'undefined') return null
+  
   const API_BASE_URL = process.env.API_BASE_URL || "https://job-assistant-demandworkai.onrender.com"
+  const cookieStore = cookies()
+  
   try {
-    const cookieStore = cookies()
     const res = await fetch(`${API_BASE_URL}/api/me`, {
       headers: {
         Cookie: cookieStore.toString()
       },
-      credentials: 'include',
-      cache: 'no-store'
+      credentials: 'include'
     })
-
-    if (!res.ok) {
-      console.error('Auth check failed with status:', res.status)
-      return null
-    }
-
     return await res.json()
   } catch (error) {
     console.error('Auth check failed:', error)
@@ -48,6 +45,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Get auth data only on server
   const authData = await getAuthData()
   const isLoggedIn = !!authData?.user
   const userEmail = authData?.user || null
