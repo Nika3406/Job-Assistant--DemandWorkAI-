@@ -35,30 +35,44 @@ export default function DashboardPage() {
     location: 'new york'
   })
   const [resumeScore, setResumeScore] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // In your fetchJobs function
     const fetchJobs = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location || 'new york')}`
-        );
+        setLoading(true)
+        setError(null)
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch jobs');
+        const response = await fetch(
+          `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location)}`
+        )
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text()
+          throw new Error(`Server error: ${text.slice(0, 100)}...`)
         }
         
-        const data = await response.json();
-        setJobs(data);
+        const data = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch jobs')
+        }
+        
+        setJobs(data)
+        if (data.length > 0) {
+          setSelectedJob(data[0])
+          fetchResumeScore(data[0].description)
+        }
       } catch (error) {
-        console.error('Error fetching jobs:', error);
-        setJobs([]);
+        console.error('Error fetching jobs:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load jobs')
+        setJobs([])
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
     const fetchResumeScore = async (jobDescription: string) => {
       try {
@@ -76,6 +90,7 @@ export default function DashboardPage() {
         setResumeScore(score)
       } catch (error) {
         console.error('Error analyzing resume:', error)
+        setError('Failed to analyze resume match')
       }
     }
 
@@ -87,7 +102,7 @@ export default function DashboardPage() {
     const formData = new FormData(e.currentTarget)
     setSearchParams({
       keywords: formData.get('keywords')?.toString() || 'developer',
-      location: formData.get('location')?.toString() || ''
+      location: formData.get('location')?.toString() || 'new york'
     })
   }
 
@@ -101,9 +116,15 @@ export default function DashboardPage() {
       },
       body: JSON.stringify({ job_description: job.description })
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Analysis failed')
+        return res.json()
+      })
       .then(({ score }) => setResumeScore(score))
-      .catch(console.error)
+      .catch(error => {
+        console.error('Error:', error)
+        setError('Failed to analyze resume for this job')
+      })
   }
 
   if (loading) {
@@ -119,6 +140,19 @@ export default function DashboardPage() {
 
   return (
     <main className="pt-24 min-h-screen px-6 max-w-7xl mx-auto">
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg flex justify-between items-center">
+          <span>{error}</span>
+          <button 
+            onClick={() => setError(null)}
+            className="px-3 py-1 text-sm bg-red-200 dark:bg-red-800/50 hover:bg-red-300 dark:hover:bg-red-700/50 rounded"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Search Form */}
       <form onSubmit={handleSearch} className="backdrop-blur-2xl bg-white/30 dark:bg-black/30 rounded-xl border border-gray-300 dark:border-neutral-800 shadow-lg p-8 mb-8">
         <h1 className="text-3xl font-bold mb-2 text-black dark:text-white">Find Your Next Opportunity, {userEmail.split('@')[0]}!</h1>
@@ -154,9 +188,11 @@ export default function DashboardPage() {
         <div className="lg:col-span-1 space-y-4">
           <div className="sticky top-28 space-y-4">
             <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-              {jobs.length === 0 ? (
+              {jobs.length === 0 && !loading ? (
                 <div className="p-4 rounded-lg border border-gray-300 dark:border-neutral-700">
-                  <p className="text-gray-600 dark:text-gray-400">No jobs found. Try different search terms.</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {error ? 'Error loading jobs' : 'No jobs found. Try different search terms.'}
+                  </p>
                 </div>
               ) : (
                 jobs.map(job => (
@@ -227,7 +263,6 @@ export default function DashboardPage() {
                     />
                   </div>
                   
-                  {/* Resume Analysis Section */}
                   <div className="pt-4 border-t border-gray-300 dark:border-neutral-800">
                     <h3 className="text-xl font-semibold text-black dark:text-white mb-4">Resume Match Score</h3>
                     {resumeScore !== null ? (
@@ -243,7 +278,9 @@ export default function DashboardPage() {
                         </p>
                       </>
                     ) : (
-                      <p className="text-gray-600 dark:text-gray-400">Analyzing resume match...</p>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        {error?.includes('resume') ? 'Error analyzing resume' : 'Analyzing resume match...'}
+                      </p>
                     )}
                   </div>
                 </div>
