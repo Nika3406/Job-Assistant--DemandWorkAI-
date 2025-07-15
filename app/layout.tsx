@@ -54,25 +54,12 @@ export default async function RootLayout({
                       Account
                     </Link>
                     <Link
-                      href="#" // Temporary href to maintain link styling
+                      href="/api/logout"
                       onClick={async (e) => {
-                        e.preventDefault(); // Prevent default link behavior
-                        try {
-                          const response = await fetch('/api/logout', {
-                            method: 'POST',
-                            credentials: 'include'
-                          });
-                          
-                          if (response.ok) {
-                            window.location.href = '/login'; // Full page refresh to clear state
-                          } else {
-                            console.error('Logout failed');
-                          }
-                        } catch (error) {
-                          console.error('Logout error:', error);
-                        }
+                        e.preventDefault();
+                        await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+                        window.location.href = '/login';
                       }}
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                     >
                       Logout
                     </Link>
