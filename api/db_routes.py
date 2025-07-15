@@ -1,7 +1,9 @@
-from flask import Blueprint, request, session, jsonify
+from flask import Blueprint, request, jsonify, session
+from flask_cors import cross_origin
 from db import create_user, get_user_by_email
 import bcrypt
 import re
+import os
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -42,6 +44,7 @@ def signup():
         return jsonify({"error": str(e)}), 500
 
 @auth_bp.route('/api/login', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def login():
     try:
         data = request.get_json()
@@ -69,16 +72,37 @@ def login():
                 "email": user['email']
             }
         })
-        response.set_cookie('user_email', user['email'], secure=True, httponly=True)
+        
+        response.set_cookie(
+            'user_email',
+            user['email'],
+            secure=os.getenv('FLASK_ENV') == 'production',
+            httponly=True,
+            path='/',
+            domain=os.getenv('COOKIE_DOMAIN', None),
+            samesite='Lax'
+        )
         return response
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @auth_bp.route('/api/logout', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def logout():
     response = jsonify({"message": "Logged out successfully"})
-    response.delete_cookie('user_email')
+    
+    # Clear the cookie with same settings as login
+    response.delete_cookie(
+        'user_email',
+        path='/',
+        domain=os.getenv('COOKIE_DOMAIN', None),
+        secure=os.getenv('FLASK_ENV') == 'production',
+        httponly=True,
+        samesite='Lax'
+    )
+    
+    session.clear()
     return response
 
 @auth_bp.route('/api/me', methods=['GET'])

@@ -13,7 +13,10 @@ export function LogoutButton() {
       })
       
       if (response.ok) {
-        router.refresh()
+        // Force a full page reload to clear all client-side state
+        window.location.href = '/'
+      } else {
+        console.error('Logout failed:', await response.text())
       }
     } catch (error) {
       console.error('Logout failed:', error)

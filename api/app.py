@@ -14,6 +14,14 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 
+# Configuration
+app.config.update(
+    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_DOMAIN=os.getenv('COOKIE_DOMAIN', None),
+)
+
 app.config['DEEPSEEK_API_KEY'] = os.environ.get('DEEPSEEK_API_KEY')
 init_deepseek(app)
 
@@ -27,6 +35,7 @@ init_db()
 
 # Register blueprints
 app.register_blueprint(auth_bp)
+app.register_blueprint(profile_bp)
 
 # CORS configuration
 CORS(
@@ -37,18 +46,18 @@ CORS(
         "http://localhost:3000"
     ],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["Content-Type", "Set-Cookie"],
     max_age=86400
 )
 
 @app.route('/')
 def health_check():
-    return {
+    return jsonify({
         "status": "healthy",
         "service": "DemandWork.AI Backend",
         "version": "1.0.0"
-    }
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
