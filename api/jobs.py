@@ -24,7 +24,7 @@ def get_jobs():
         location = request.args.get('location', 'new york')
 
         # Build API URL
-        api_url = f"https://api.adzuna.com/v1/api/jobs/us/search/1?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}&results_per_page=20&what={keywords}&where={location}&content-type=application/json"
+        api_url = f"https://api.adzuna.com/v1/api/jobs/us/search/1?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}&results_per_page=1&what={keywords}&where={location}&content-type=application/json"
 
         # Make request to Adzuna API
         response = requests.get(api_url)
