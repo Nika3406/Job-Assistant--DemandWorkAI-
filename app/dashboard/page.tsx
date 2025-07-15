@@ -37,39 +37,28 @@ export default function DashboardPage() {
   const [resumeScore, setResumeScore] = useState<number | null>(null)
 
   useEffect(() => {
+    // In your fetchJobs function
     const fetchJobs = async () => {
       try {
-        setLoading(true)
-        console.log('Fetching jobs with params:', searchParams) // Debug log
-        
+        setLoading(true);
         const response = await fetch(
-          `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location)}`
-        )
-        
-        console.log('Response status:', response.status) // Debug log
+          `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location || 'new york')}`
+        );
         
         if (!response.ok) {
-          const errorData = await response.json()
-          console.error('Error response:', errorData) // Debug log
-          throw new Error(errorData.error || 'Failed to fetch jobs')
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch jobs');
         }
         
-        const data: Job[] = await response.json()
-        console.log('Jobs data:', data) // Debug log
-        setJobs(data)
-        if (data.length > 0) {
-          setSelectedJob(data[0])
-          fetchResumeScore(data[0].description)
-        }
+        const data = await response.json();
+        setJobs(data);
       } catch (error) {
-        console.error('Error fetching jobs:', error)
-        // Show error to user
-        setJobs([])
-        setSelectedJob(null)
+        console.error('Error fetching jobs:', error);
+        setJobs([]);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     const fetchResumeScore = async (jobDescription: string) => {
       try {

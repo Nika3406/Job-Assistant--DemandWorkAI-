@@ -1,7 +1,6 @@
 import os
 import requests
 from flask import Blueprint, request, jsonify
-from functools import lru_cache
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -9,19 +8,19 @@ ADZUNA_APP_ID = os.environ.get('ADZUNA_APP_ID')
 ADZUNA_APP_KEY = os.environ.get('ADZUNA_APP_KEY')
 
 @jobs_bp.route('/api/jobs')
-@lru_cache(maxsize=128, typed=False)
 def get_jobs():
     try:
+        # Get parameters with defaults
         keywords = request.args.get('keywords', 'developer')
-        location = request.args.get('location', 'new york')
-        country = 'us'
+        location = request.args.get('location', 'new york')  
+        country = 'us'  
         
+        # Validate API credentials
         if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
             return jsonify({"error": "Adzuna API credentials not configured"}), 500
-            
-        print(f"Making request to Adzuna with: keywords={keywords}, location={location}")  # Debug log
-        
-        url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1"
+
+        # Make request to Adzuna API
+        url = f"http://api.adzuna.com/v1/api/jobs/{country}/search/1"
         params = {
             'app_id': ADZUNA_APP_ID,
             'app_key': ADZUNA_APP_KEY,
@@ -32,13 +31,11 @@ def get_jobs():
         }
         
         response = requests.get(url, params=params)
-        response.raise_for_status()  # Will raise for 4XX/5XX status codes
+        response.raise_for_status()  # Raises exception for 4XX/5XX errors
         
-        data = response.json()
-        print(f"Received {len(data.get('results', []))} jobs from Adzuna")  # Debug log
-        
+        # Parse and format the response
         jobs = []
-        for result in data.get('results', []):
+        for result in response.json().get('results', []):
             jobs.append({
                 'id': result.get('id'),
                 'title': result.get('title'),
@@ -54,11 +51,9 @@ def get_jobs():
         return jsonify(jobs)
         
     except requests.exceptions.RequestException as e:
-        print(f"Adzuna API request failed: {str(e)}")  # Debug log
-        return jsonify({'error': f"Job search service unavailable: {str(e)}"}), 500
+        return jsonify({"error": f"Adzuna API request failed: {str(e)}"}), 502
     except Exception as e:
-        print(f"Unexpected error in job search: {str(e)}")  # Debug log
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 def format_salary(job):
     if not job.get('salary_min') and not job.get('salary_max'):
@@ -66,7 +61,7 @@ def format_salary(job):
         
     salary_min = job.get('salary_min', 0)
     salary_max = job.get('salary_max', salary_min)
-    currency = job.get('salary_currency', 'USD')
+    currency = job.get('salary_currency', 'GBP')  # Default to GBP
     
     if salary_min == salary_max:
         return f"{currency} {salary_min:,}"
