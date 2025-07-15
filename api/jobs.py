@@ -22,21 +22,12 @@ def get_jobs():
         # Get parameters with defaults
         keywords = request.args.get('keywords', 'developer')
         location = request.args.get('location', 'new york')
-        country = request.args.get('country', 'us')  # Default to GB as per your example
 
         # Build API URL
-        api_url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1"
-        params = {
-            'app_id': ADZUNA_APP_ID,
-            'app_key': ADZUNA_APP_KEY,
-            'results_per_page': 20,
-            'what': keywords,
-            'where': location,
-            'content-type': 'application/json'
-        }
+        api_url = f"https://api.adzuna.com/v1/api/jobs/us/search/1?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}&results_per_page=20&what={keywords}&where={location}&content-type=application/json"
 
         # Make request to Adzuna API
-        response = requests.get(api_url, params=params)
+        response = requests.get(api_url)
         response.raise_for_status()  # Raises HTTPError for bad responses
         
         data = response.json()
@@ -82,10 +73,6 @@ def clean_description(desc: str) -> str:
     if len(desc) > 1500:
         desc = desc[:1500] + '...'
     return desc
-
-@jobs_bp.route('/api/ping')
-def ping():
-    return jsonify({"status": "ok", "message": "Backend is working"})
 
 def format_salary(job: dict) -> str:
     """Format salary information from Adzuna response"""
