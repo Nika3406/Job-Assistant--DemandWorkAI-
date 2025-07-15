@@ -16,31 +16,28 @@ def get_jobs():
 
         keywords = request.args.get('keywords', 'developer')
         location = request.args.get('location', 'new york')
-        country = 'us'  # or 'gb' for UK
+        country = 'us'  # default to US, but could be parameterized
 
-        # Print debug info (check your server logs)
-        print(f"Making request to Adzuna with: {ADZUNA_APP_ID[:3]}...{ADZUNA_APP_ID[-3:]}")
-        
-        response = requests.get(
-            f"http://api.adzuna.com/v1/api/jobs/{country}/search/1",
-            params={
-                'app_id': ADZUNA_APP_ID,
-                'app_key': ADZUNA_APP_KEY,
-                'results_per_page': 20,
-                'what': keywords,
-                'where': location,
-                'content-type': 'application/json'
-            }
+        # Build the exact API URL as per Adzuna documentation
+        api_url = (
+            f"http://api.adzuna.com/v1/api/jobs/{country}/search/1?"
+            f"app_id={ADZUNA_APP_ID}&"
+            f"app_key={ADZUNA_APP_KEY}&"
+            f"results_per_page=20&"
+            f"what={keywords}&"
+            f"where={location}&"
+            f"content-type=application/json"
         )
+
+        print(f"Making Adzuna API request to: {api_url.split('?')[0]}?...")  # Don't log full URL with keys
         
-        # Print response status for debugging
-        print(f"Adzuna API response status: {response.status_code}")
-        
-        response.raise_for_status()  # Will raise for 4XX/5XX errors
+        response = requests.get(api_url)
+        response.raise_for_status()  # Raises exception for 4XX/5XX errors
         
         data = response.json()
-        jobs = []
         
+        # Process results as before
+        jobs = []
         for result in data.get('results', []):
             jobs.append({
                 'id': result.get('id'),
@@ -57,11 +54,14 @@ def get_jobs():
         return jsonify(jobs)
         
     except requests.exceptions.HTTPError as e:
-        print(f"Adzuna API HTTP Error: {str(e)}")
-        return jsonify({"error": f"Job service error: {str(e)}"}), 502
+        error_msg = f"Adzuna API Error: {str(e)}"
+        if e.response:
+            error_msg += f" | Response: {e.response.text[:200]}"
+        print(error_msg)
+        return jsonify({"error": "Failed to fetch jobs from job service"}), 502
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
-        return jsonify({"error": "Failed to fetch jobs"}), 500
+        print(f"Unexpected error in jobs endpoint: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 def format_salary(job):
     if not job.get('salary_min') and not job.get('salary_max'):
