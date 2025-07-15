@@ -94,8 +94,21 @@ export default function AccountPage() {
       setUploadError('')
       setUploadProgress(0)
       
+      // Validate file size (max 5MB)
+      if (resumeFile.size > 5 * 1024 * 1024) {
+        throw new Error('File size exceeds 5MB limit')
+      }
+      
       const formData = new FormData()
       formData.append('resume', resumeFile)
+      
+      // Create progress interval
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          // Don't go to 100% until the upload is actually complete
+          return Math.min(prev + 10, 90)
+        })
+      }, 200)
       
       const response = await fetch('/api/upload-resume', {
         method: 'POST',
@@ -103,25 +116,24 @@ export default function AccountPage() {
         credentials: 'include'
       })
       
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90))
-      }, 200)
+      clearInterval(progressInterval)
       
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Upload failed')
       }
       
-      clearInterval(progressInterval)
       setUploadProgress(100)
       
       const result = await response.json()
       setResumeUrl(result.user.resume_url)
       
+      // Reset after successful upload
       setTimeout(() => {
         setUploadProgress(0)
         setResumeFile(null)
       }, 1000)
+      
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Upload failed')
       setUploadProgress(0)
