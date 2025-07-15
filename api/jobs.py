@@ -83,6 +83,10 @@ def clean_description(desc: str) -> str:
         desc = desc[:1500] + '...'
     return desc
 
+@jobs_bp.route('/api/ping')
+def ping():
+    return jsonify({"status": "ok", "message": "Backend is working"})
+
 def format_salary(job: dict) -> str:
     """Format salary information from Adzuna response"""
     if not job.get('salary_min') and not job.get('salary_max'):
