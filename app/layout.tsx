@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { cookies } from 'next/headers'
 import { AuthProvider } from './auth-provider'
+import { LogoutButton } from './logout-button'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -53,12 +54,7 @@ export default async function RootLayout({
                     <Link href="/account" className="px-4 py-2 rounded-lg text-sm font-medium text-black dark:text-white hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors">
                       Account
                     </Link>
-                    <Link 
-                      href="/api/logout"
-                      className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
-                    >
-                      Logout
-                    </Link>
+                    <LogoutButton />
                   </>
                 ) : (
                   <>

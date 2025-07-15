@@ -77,8 +77,9 @@ def login():
 
 @auth_bp.route('/api/logout', methods=['POST'])
 def logout():
-    session.clear()
-    return jsonify({"message": "Logged out successfully"})
+    response = jsonify({"message": "Logged out successfully"})
+    response.delete_cookie('user_email')
+    return response
 
 @auth_bp.route('/api/me', methods=['GET'])
 def get_current_user():
