@@ -53,13 +53,9 @@ export default async function RootLayout({
                     <Link href="/account" className="px-4 py-2 rounded-lg text-sm font-medium text-black dark:text-white hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors">
                       Account
                     </Link>
-                    <Link
+                    <Link 
                       href="/api/logout"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-                        window.location.href = '/login';
-                      }}
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                     >
                       Logout
                     </Link>

@@ -77,45 +77,8 @@ def login():
 
 @auth_bp.route('/api/logout', methods=['POST'])
 def logout():
-    try:
-        # Create the response object first
-        response = jsonify({
-            "message": "Logout successful",
-            "user": None
-        })
-        
-        # Clear all authentication cookies
-        response.set_cookie(
-            'user_email', 
-            '', 
-            expires=0, 
-            max_age=0,  # Immediately expires
-            secure=True, 
-            httponly=True, 
-            samesite='Lax',
-            path='/'  # Ensure it clears for all paths
-        )
-        
-        # Only include if you're actually using a session cookie
-        response.set_cookie(
-            'session', 
-            '', 
-            expires=0,
-            max_age=0,
-            secure=True,
-            httponly=True,
-            samesite='Lax',
-            path='/'
-        )
-        
-        # Clear server-side session if you're using it
-        if 'session' in globals():  # Only if sessions are configured
-            session.clear()
-        
-        return response
-        
-    except Exception as e:
-        return jsonify({"error": "Logout failed"}), 500
+    session.clear()
+    return jsonify({"message": "Logged out successfully"})
 
 @auth_bp.route('/api/me', methods=['GET'])
 def get_current_user():
