@@ -37,65 +37,80 @@ export default function DashboardPage() {
   const [resumeScore, setResumeScore] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Initial load
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        const response = await fetch(
-          `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location)}`
-        )
-        
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type')
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text()
-          throw new Error(`Server error: ${text.slice(0, 100)}...`)
-        }
-        
-        const data = await response.json()
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch jobs')
-        }
-        
-        setJobs(data)
-        if (data.length > 0) {
-          setSelectedJob(data[0])
-          fetchResumeScore(data[0].description)
-        }
-      } catch (error) {
-        console.error('Error fetching jobs:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load jobs')
-        setJobs([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    const fetchResumeScore = async (jobDescription: string) => {
-      try {
-        const response = await fetch('/api/analyze-resume', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ job_description: jobDescription })
-        })
-        
-        if (!response.ok) throw new Error('Failed to analyze resume')
-        
-        const { score } = await response.json()
-        setResumeScore(score)
-      } catch (error) {
-        console.error('Error analyzing resume:', error)
-        setError('Failed to analyze resume match')
-      }
-    }
-
     fetchJobs()
+  }, [])
+
+  // Fetch when search params change
+  useEffect(() => {
+    if (searchParams.keywords || searchParams.location) {
+      fetchJobs()
+    }
   }, [searchParams])
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch(
+        `/api/jobs?keywords=${encodeURIComponent(searchParams.keywords)}&location=${encodeURIComponent(searchParams.location)}`
+      )
+
+      // Handle non-JSON responses
+      if (!response.ok) {
+        const errorText = await response.text()
+        try {
+          const errorData = JSON.parse(errorText)
+          throw new Error(errorData.error || 'Failed to fetch jobs')
+        } catch {
+          throw new Error(errorText || 'Failed to fetch jobs')
+        }
+      }
+
+      const data = await response.json()
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid jobs data received')
+      }
+
+      setJobs(data)
+      if (data.length > 0) {
+        setSelectedJob(data[0])
+        fetchResumeScore(data[0].description)
+      } else {
+        setSelectedJob(null)
+      }
+    } catch (error) {
+      console.error('Fetch jobs error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load jobs')
+      setJobs([])
+      setSelectedJob(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchResumeScore = async (jobDescription: string) => {
+    try {
+      const response = await fetch('/api/analyze-resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ job_description: jobDescription })
+      })
+      
+      if (!response.ok) throw new Error('Failed to analyze resume')
+      
+      const { score } = await response.json()
+      setResumeScore(score)
+    } catch (error) {
+      console.error('Error analyzing resume:', error)
+      setError('Failed to analyze resume match')
+    }
+  }
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -109,25 +124,10 @@ export default function DashboardPage() {
   const handleJobSelect = (job: Job) => {
     setSelectedJob(job)
     setResumeScore(null)
-    fetch(`/api/analyze-resume`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ job_description: job.description })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Analysis failed')
-        return res.json()
-      })
-      .then(({ score }) => setResumeScore(score))
-      .catch(error => {
-        console.error('Error:', error)
-        setError('Failed to analyze resume for this job')
-      })
+    fetchResumeScore(job.description)
   }
 
-  if (loading) {
+  if (loading && jobs.length === 0) {
     return (
       <div className="pt-24 min-h-screen flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
@@ -175,9 +175,10 @@ export default function DashboardPage() {
           />
           <button 
             type="submit"
-            className="px-6 py-3 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+            disabled={loading}
+            className="px-6 py-3 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Search
+            {loading ? 'Searching...' : 'Search'}
           </button>
         </div>
       </form>
@@ -191,7 +192,7 @@ export default function DashboardPage() {
               {jobs.length === 0 && !loading ? (
                 <div className="p-4 rounded-lg border border-gray-300 dark:border-neutral-700">
                   <p className="text-gray-600 dark:text-gray-400">
-                    {error ? 'Error loading jobs' : 'No jobs found. Try different search terms.'}
+                    No jobs found. Try different search terms.
                   </p>
                 </div>
               ) : (
@@ -223,7 +224,7 @@ export default function DashboardPage() {
         </div>
         
         {/* Job Detail Column */}
-        {selectedJob && (
+        {selectedJob ? (
           <div className="lg:col-span-2">
             <div className="sticky top-24">
               <div className="backdrop-blur-2xl bg-white/30 dark:bg-black/30 rounded-xl border border-gray-300 dark:border-neutral-800 shadow-lg p-8">
@@ -249,7 +250,7 @@ export default function DashboardPage() {
                       rel="noopener noreferrer"
                       className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors whitespace-nowrap"
                     >
-                      Apply on Adzuna
+                      Apply Now
                     </a>
                   </div>
                 </div>
@@ -279,12 +280,20 @@ export default function DashboardPage() {
                       </>
                     ) : (
                       <p className="text-gray-600 dark:text-gray-400">
-                        {error?.includes('resume') ? 'Error analyzing resume' : 'Analyzing resume match...'}
+                        Analyzing resume match...
                       </p>
                     )}
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        ) : (
+          <div className="lg:col-span-2 flex items-center justify-center">
+            <div className="text-center p-8 rounded-xl border border-gray-300 dark:border-neutral-700">
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400">
+                Select a job to view details
+              </h3>
             </div>
           </div>
         )}
